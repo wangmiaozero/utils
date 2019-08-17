@@ -13,14 +13,27 @@ Vue.prototype.$http = axios;
 for(const k in config){
     axios.defaults[k]=config[k]
 }
-// 全局的 axios 默认值
-
-// axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+const service = axios.create({
+  //打包的时候把这个换成你域名 /api
+ baseURL:'/api',
+// baseURL:'http://api.taoxinmei.com', 
+// baseURL:'http://api_test.taoxinmei.com', 
+  headers: {
+    'X-Custom-Header': 'foobar',
+    'Content-Type': 'X-WWW-FORM-URLENCODED',
+    'Access-Control-Allow-Credentials' : true,
+    'Access-Control-Allow-Origin':'*',
+    'Access-Control-Allow-Methods':'GET,POST',
+    'Access-Control-Allow-Headers':'application/json',
+  },
+  timeout: 15000 //请求超出时间
+})
+/* // 全局的 axios 默认值
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 axios.defaults.headers.put['Content-Type'] = 'application/json'
-axios.defaults.headers.patch['Content-Type'] = 'application/json'
+axios.defaults.headers.patch['Content-Type'] = 'application/json' */
 // 添加请求拦截器
-axios.interceptors.request.use(function (config) {
+service.interceptors.request.use(function (config) {
     // 在发送请求之前做些什么
     let token = localStorage.getItem('token')||''
     config.headers.Authorization = token
@@ -31,7 +44,7 @@ axios.interceptors.request.use(function (config) {
   });
 
   // 添加响应拦截器
-  axios.interceptors.response.use(function (response) {
+  service.interceptors.response.use(function (response) {
     // 对响应数据做点什么
     //console.log(response.data)
    // response = response.data
@@ -41,11 +54,11 @@ axios.interceptors.request.use(function (config) {
     // 对响应错误做点什么
      //后台服务异常  404 504 请求超时等
     //window.console.err(error, error.response, error.message)
-    Vue.prototype.$message({
+   /*  Vue.prototype.$message({
       showClonse:true,
       type:'error',
       message:error.response.data.errMsg
-    })
+    }) */
     return Promise.reject(error);
   });
 
@@ -66,4 +79,4 @@ axios.interceptors.request.use(function (config) {
        return Promise.reject(response.data)
     }
    }
-  export default axios
+  export default service
