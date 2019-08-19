@@ -20,10 +20,10 @@ const service = axios.create({
 // baseURL:'http://api_test.taoxinmei.com', 
   headers: {
     'X-Custom-Header': 'foobar',
-    'Content-Type': 'X-WWW-FORM-URLENCODED',
+    'Content-Type': 'X-WWW-FORM-URLENCODED',// 这里get请求无法生效 官方写的BUG
     'Access-Control-Allow-Credentials' : true,
     'Access-Control-Allow-Origin':'*',
-    'Access-Control-Allow-Methods':'GET,POST',
+    'Access-Control-Allow-Methods':'GET, POST, PUT',
     'Access-Control-Allow-Headers':'application/json',
   },
   timeout: 15000 //请求超出时间
@@ -37,6 +37,12 @@ service.interceptors.request.use(function (config) {
     // 在发送请求之前做些什么
     let token = localStorage.getItem('token')||''
     config.headers.Authorization = token
+      // 在发送请求之前做些什么
+  // 随便写个值 绕过if判段
+  if (config.method == 'get') {
+    config.data = true
+  }
+  config.headers['H-TOKEN'] = '2333'
     return config;
   }, function (error) {
     // 对请求错误做些什么
