@@ -15,7 +15,12 @@ for (const k in config) {
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 // 添加请求拦截器
 axios.interceptors.request.use(function (config) {
-  // 在发送请求之前做些什么
+  // 在发送请求之前做些什么 X-WWW-FORM-URLENCODED
+  config.headers["Content-Type"] = "application/json";
+  if (config.method == "get") {
+    config.data = true;
+  }
+  config.headers["H-TOKEN"] = "2333";
   let token = localStorage.getItem('token') || ''
   config.headers.Authorization = token
   return config
@@ -34,7 +39,7 @@ axios.interceptors.response.use(function (response) {
   Vue.prototype.$message({
     showClonse: true,
     type: 'error',
-    message: error.response.data.errMsg
+    message: error
   })
   return Promise.reject(error)
 })

@@ -1,5 +1,6 @@
 export default {
   // 全局配置baseURL
-  baseURL: 'http://txm_home_test.xindianmao.com',
+ // baseURL: 'http://test_yy_home.taoxinmei.com',
+   baseURL: '/api',
   withCredentials: true
 }
