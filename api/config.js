@@ -1,6 +1,7 @@
 export default {
   // 全局配置baseURL
- // baseURL: 'http://test_yy_home.taoxinmei.com',
-   baseURL: '/api',
+  baseURL: 'http://api_yy_test.taoxinmei.com',
+ //  baseURL: '/api',
+  timeout: 15000, // 请求超时时间
   withCredentials: true
 }
