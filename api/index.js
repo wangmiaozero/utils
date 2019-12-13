@@ -23,7 +23,8 @@ axios.interceptors.request.use(function (config) {
   }
   config.headers["Content-Type"] = "application/json";
   let token = localStorage.getItem('token') || ''
-  config.headers.Authorization = token
+  config.headers.common['Authorization']=token
+  //config.headers.Authorization = token
   return config
 }, function (error) {
   // 对请求错误做些什么
