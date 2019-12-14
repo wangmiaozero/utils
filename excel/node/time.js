@@ -27,15 +27,17 @@ function createdTime() {
   )
   week = arr_week[day]
   let time = `${year}年${month}月${date}日${' '}${hour}${':'}${minu}${':'}${sec}${' '}${week}`
+  let timeJoin = `${year}年${month}月${date}日${hour}${':'}${minu}${':'}${sec}-${week}`
   let timeOne = `${year}-${month}-${date}${' '}${hour}${':'}${minu}${':'}${sec}${' '}${week}`
   let timeTwo = `${year}-${month}-${date}${' '}${hour}${':'}${minu}${':'}${sec}`
   let presenTdate = `${year}-${month}-${date}`
   let data = {
-    time: time,
-    timeOne: timeOne,
-    timeTwo: timeTwo,
+    time,
+    timeJoin,
+    timeOne,
+    timeTwo,
     now: new Date(now).getTime(),
-    presenTdate: presenTdate
+    presenTdate
   }
   return data
 }
