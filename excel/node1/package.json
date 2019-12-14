@@ -25,11 +25,9 @@
   "homepage": "https://github.com/linwalker/output-xlsx-demo#readme",
   "dependencies": {
     "cross-env": "^6.0.3",
-    "csv": "^5.3.1",
-    "gbk-dict": "0.0.1",
     "koa": "^2.3.0",
     "koa-router": "^7.2.1",
     "koa-views": "^6.0.2",
-    "node-xlsx": "^0.15.0"
+    "xlsx": "^0.10.6"
   }
 }
