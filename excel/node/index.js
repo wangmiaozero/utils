@@ -61,10 +61,8 @@ router.get('/exportexcel', async ctx => {
     conf.rows = alldata //填充数据
     let result = nodeExcel.execute(conf)
     //最后3行express框架是这样写
-    // res.setHeader('Content-Type', 'application/vnd.openxmlformats');
-    // res.setHeader("Content-Disposition", "attachment; filename=" + "Report.xlsx");
-    // res.end(result, 'binary');
-    let data = new Buffer(result, 'binary')
+    // ctx.body = { code: 200, result }
+    let data = new Buffer.from(result, 'binary')
     ctx.set('Content-Type', 'application/vnd.openxmlformats')
     ctx.set('Content-Disposition', 'attachment; filename=' + 'Report.xlsx')
     ctx.body = data
@@ -72,6 +70,7 @@ router.get('/exportexcel', async ctx => {
   let r = await readydata()
   r = await exportdata(r)
 })
+
 //导入Excel，xlsx格式
 const xlsxfile = 'E:/xlsx格式.xlsx'
 router.post('/importexcelxlsx', async ctx => {
