@@ -54,8 +54,9 @@ function formatDateFn(now) {
   if (second < 10) second = '0' + second
   let time =
     year + '-' + month + '-' + date + ' ' + hour + ':' + minute + ':' + second
-  let timeOne = year + '-' + month + '-' + date
-  let data = { time, timeOne }
+  let timeYMD = year + '-' + month + '-' + date
+  let timeHMS = hour + ':' + minute + ':' + second
+  let data = { time, timeYMD,timeHMS }
   return data
 }
 module.exports = { createdTime, formatDateFn }
