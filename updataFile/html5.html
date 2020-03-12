@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Document</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+        }
+
+        ul,ol{
+            list-style-type:none;
+        }
+
+        .clearfix:after,.clearfix:before{
+
+            display:table;
+            content:' ';
+        }
+
+        .clearfix:after{
+            clear:both
+        }
+
+        .tc{
+            text-align:center;
+        }
+
+        .select,.select_video{
+            height:2rem;
+            line-height:2rem;
+            background:#fff;
+            border:1px solid #4285F4;
+            margin:0.5rem 1rem;
+            position:relative;
+        }
+
+        .select label,.select_video label{
+            width:100%;
+            position:absolute;
+            top:0;
+            left:0;
+            font-size:14px;
+            color:#333;
+        }
+
+        #upload,#upload_video{
+            display:none;
+        }
+
+        .preview,.video_preview{
+            margin:0.5rem 1rem;
+            border:1px solid #bbb;
+            padding:4px;
+            display:none;
+        }
+
+        .preview_img_list li{
+            float:left;
+            width:25%;
+            padding:2px 0;
+
+        }   
+
+        .preview_img_list li img{
+            vertical-align:top;
+            max-width:98%;
+        }
+
+        .btn{
+            background: #4285F4;
+            color:#fff;
+            height:2.5rem;
+            line-height:2.5rem;
+            margin:2rem 1rem;
+            border-radius:0.5rem;
+        }
+    </style>
+    <script>
+        window.onload = function(){
+
+            var uploadBtn = document.querySelector('#upload');
+            var previewImgList = document.querySelector('.preview_img_list');
+
+            var uploadVideo = document.querySelector('#upload_video');
+            var submitBtn = document.querySelector('.submit');
+
+            imgArr = new Array();
+
+            uploadBtn.addEventListener('change',function(){
+                var imgLen = this.files.length;
+                var liLen = previewImgList.getElementsByTagName('li').length;
+                var ImgLen = imgLen + liLen ;
+
+                if(ImgLen > 9){
+                    alert("上传最大数量不能大于9");
+                    return false;
+                }
+
+                document.querySelector(".preview").style.display = 'block';
+
+                for(var i = 0; i < imgLen;i++){
+                    var file = this.files[i];
+                    var imgType = /^image\//;
+
+                    if(!imgType.test(file.type)){
+                        continue;
+                    }
+
+                    var li = document.createElement('li');
+                    var img = document.createElement("img");
+
+                    li.appendChild(img);
+                    previewImgList.appendChild(li); 
+
+                    var reader = new FileReader();
+                    reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; initHW(); imgArr.push(e.target.result);}; })(img);
+                    reader.readAsDataURL(file);
+                    // var objectUrl = window.URL.createObjectURL(file);
+                    // img.src = objectUrl;
+                }
+
+            },false);
+
+
+            uploadVideo.addEventListener('change',function(){
+                var file = this.files[0];
+                var videoType = /^video\//;
+
+                if(!videoType.test(file.type)){
+                    alert("所选文件不是合法的视频文件");
+                    return false;
+                }
+
+                var pv =  document.querySelector('.video_preview');
+                var video =  document.createElement('video');
+                video.setAttribute('controls','controls');
+                video.style.width = "100%";
+
+                pv.appendChild(video);
+                pv.style.display = "block";
+                // var objectUrl = window.URL.createObjectURL(file);
+                // video.src = objectUrl;
+                // 
+                var reader = new FileReader();
+                reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; }; })(video);
+                reader.readAsDataURL(file);
+                video.play();
+            },false);
+
+            submitBtn.addEventListener('click',function(){
+                if(!imgArr.length){
+                    alert('请选择要上传的图片');
+                    return false;
+                }
+                var form = document.querySelector('form');
+                var fd = new FormData(form);
+                for(var i = 0;i < imgArr.length;i++){
+                    fd.append('file[]',imgArr[i]);
+                }
+
+                var request = new XMLHttpRequest();
+                var url = "./file_preview.php";
+                request.open('post',url);
+                request.send(fd);
+            },false);
+
+        }
+
+
+
+        // 初始化图片宽度
+        // 使得图片高度一致
+        function initHW(){
+            var previewImgList = document.querySelector('.preview_img_list');
+            var Lis = previewImgList.getElementsByTagName('li');
+
+            var LisLen = Lis.length;
+
+            if(LisLen > 1){
+                var img = Lis[0].getElementsByTagName('img')[0];
+
+                var imgW = img.width;
+                var imgH = img.height;
+
+                for(var i = 1; i < LisLen; i++){
+                    var img = Lis[i].getElementsByTagName('img')[0];
+                    img.style.width = imgW + 'px';
+                    img.style.height = imgH + 'px';
+                }
+            }
+
+        }
+
+
+    </script>
+</head>
+<body>
+    <h2 class = "tc">图片上传及预览</h2>
+    <form action="" >
+        <div class="select tc" >
+            <label for="upload">图片上传及预览</label>
+            <input type="file" id = "upload" multiple="multiple" accpet = "image/*" capture = "camera" >
+        </div>
+
+        <div class="preview">
+            <ul class = "preview_img_list clearfix">
+
+            </ul>
+        </div>
+
+        <div class="select_video tc">
+            <label for="upload_video">视频上传及预览</label>
+            <input type="file" id = "upload_video" accpet = "video/*" capture = "camcorder">
+        </div>
+
+        <div class="video_preview">
+
+        </div>
+
+        <div class="submit btn tc">上传</div>
+    </form>
+</body>
+</html>

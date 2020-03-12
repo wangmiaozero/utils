@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>updataFile</title>
+</head>
+<style lang="">
+  /*外层div*/
+.input-file-box{
+border: 1px solid gray;
+  width: 150px;
+  height: 150px;
+  position: relative;
+  text-align: center;
+  border-radius: 8px;
+}
+/*文字描述*/
+.input-file-box > span{
+display: block;
+  width: 100px;
+  height: 30px;
+  position: absolute;
+  top: 0px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  color: gray;
+}
+/*input框*/
+.input-file-box #uploadfile{
+opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+</style>
+<body>
+  <div class="input-file-box">
+    <span>点击上传图片</span>
+    <input type="file" name="" id="uploadfile" multiple>
+  </div>
+  <div id="img-box"></div>
+  
+  <script>
+      window.onload=function(){
+            var input=document.getElementById("uploadfile");
+            var div;
+            // 当用户上传时触发事件
+            input.onchange=function(){
+              readFile(this);
+            }
+            //处理图片并添加都dom中的函数
+            var readFile=function(obj){
+              // 获取input里面的文件组
+              var fileList=obj.files;
+              //对文件组进行遍历，可以到控制台打印出fileList去看看
+              for(var i=0;i<fileList.length;i++){
+                var reader= new FileReader();
+                reader.readAsDataURL(fileList[i]);
+                // 当文件读取成功时执行的函数
+                reader.onload=function(e){
+                  div=document.createElement('div');
+                  div.innerHTML='<img src="'+this.result+'" />';
+                  document.getElementById("img-box").appendChild(div);
+                }
+              }
+            }
+        }
+  </script>
+</body>
+</html>
