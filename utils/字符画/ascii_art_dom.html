@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>ascii art</title>
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas, img, #container {
+            display: block;
+            margin: auto;
+        }
+
+        #container {
+            line-height: 12px;
+            font-size: 12px;
+            font-family: 'SimHei', monospace;
+            letter-spacing: 6px;
+        }
+
+    </style>
+</head>
+<body>
+<img src="./trump.png" alt="trump"/>
+<div id="container"></div>
+<script>
+  (function () {
+    var container = document.getElementById('container')
+    var offScreenCvs = document.createElement('canvas')
+    var offScreenCtx = offScreenCvs.getContext('2d', { alpha: false })
+    var offScreenCvsWidth, offScreenCvsHeight
+    var samplerStep = 4
+    var fontSize = 10
+
+    var imageData
+    var x, y, pos
+    var asciiCharArray = '#KDGLftji+;,:.'.split('')
+    var durationPerChar = Math.ceil(255 / asciiCharArray.length)
+
+    var img = new Image()
+    var onImgLoaded = function () {
+      offScreenCvsWidth = img.width
+      offScreenCvsHeight = img.height
+      offScreenCvs.width = offScreenCvsWidth
+      offScreenCvs.height = offScreenCvsHeight
+      offScreenCtx.drawImage(img, 0, 0, offScreenCvsWidth, offScreenCvsHeight)
+      imageData = offScreenCtx.getImageData(0, 0, offScreenCvsWidth, offScreenCvsHeight)
+      if (fontSize < 12) {
+        container.style.transform = 'scale(' + (fontSize / 12) + ')'
+        container.style.transformOrigin = '50% 0'
+        fontSize = 12
+      }
+      container.style.width = (offScreenCvsWidth * fontSize / samplerStep) + 'px'
+      container.style.height = (offScreenCvsHeight / samplerStep * fontSize) + 'px'
+      container.style.fontSize = fontSize + 'px'
+      container.style.lineHeight = fontSize + 'px'
+      container.style.letterSpacing = (fontSize / 2) + 'px'
+      render()
+    }
+    img.src = './trump.png'
+    img.complete ? onImgLoaded() : (img.onload = onImgLoaded)
+
+    function render () {
+      var imageDataContent = imageData.data
+      var strArray = []
+      var part1, part2
+      var letter
+      var value
+      for (y = 0; y < offScreenCvsHeight; y += samplerStep) {
+        strArray.push('<p>')
+        for (x = 0; x < offScreenCvsWidth; x += samplerStep) {
+          pos = y * offScreenCvsWidth + x
+          value = imageDataContent[pos * 4] * 0.3086 + imageDataContent[pos * 4 + 1] * 0.6094 + imageDataContent[pos * 4 + 2] * 0.0820
+          imageDataContent[pos * 4] = imageDataContent[pos * 4 + 1] = imageDataContent[pos * 4 + 2] = value
+
+          part1 = Math.floor(value / durationPerChar)
+          part2 = value % durationPerChar
+          letter = part2 ? asciiCharArray[part1] : (part1 ? asciiCharArray[part1 - 1] : 'æ')
+
+          strArray.push(letter)
+        }
+        strArray.push('</p>')
+
+      }
+      container.innerHTML = strArray.join('')
+    }
+  })()
+</script>
+</body>
+</html>

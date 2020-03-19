@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>瀑布流</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            position: relative;
+            margin: 10px auto;
+        }
+
+        .img-box {
+            width: 312px;
+            cursor: pointer;
+            box-shadow: 1px 1px 2px #000;
+            border-radius: 5px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            border: 1px solid lightgray;
+            position: absolute;
+            transition: top .5s, left .5s;
+        }
+
+        .img-box:hover {
+            margin: 0 3px 2px 1px;
+            box-shadow: 2px 2px 4px #000;
+        }
+
+        .img-box img {
+            display: block;
+            width: 300px;
+            margin-top: 5px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+</body>
+<script>
+  (function () {
+
+    var container = document.getElementById('container')
+    var oldCols = 0
+    var cols = 0
+    var imageWidth = 300
+    var boxBorder = 1
+    var boxPadding = 5
+    var boxMarginRight = 10
+    var boxMarginBottom = 10
+    var boxWidth = imageWidth + boxBorder * 2 + boxPadding * 2
+
+    var imgInfoList = [
+      { src: './img/1.jpg', width: 550, height: 452 },
+      { src: './img/2.jpg', width: 720, height: 640 },
+      { src: './img/3.jpg', width: 1600, height: 900 },
+      { src: './img/4.jpg', width: 700, height: 560 },
+      { src: './img/5.jpg', width: 700, height: 536 },
+      { src: './img/6.jpg', width: 686, height: 430 },
+      { src: './img/7.jpg', width: 600, height: 337 },
+      { src: './img/8.jpg', width: 640, height: 332 },
+      { src: './img/9.jpg', width: 700, height: 677 },
+      { src: './img/10.jpg', width: 224, height: 280 },
+      { src: './img/11.jpg', width: 700, height: 510 },
+      { src: './img/12.jpg', width: 486, height: 558 },
+      { src: './img/13.jpg', width: 224, height: 398 },
+      { src: './img/14.jpg', width: 700, height: 373 },
+      { src: './img/15.jpg', width: 224, height: 343 },
+      { src: './img/16.jpg', width: 2000, height: 2830 },
+      { src: './img/17.jpg', width: 600, height: 1066 },
+      { src: './img/18.jpg', width: 600, height: 402 },
+      { src: './img/19.jpg', width: 560, height: 570 },
+      { src: './img/20.jpg', width: 640, height: 1331 },
+      { src: './img/21.jpg', width: 640, height: 360 },
+      { src: './img/22.jpg', width: 700, height: 933 },
+      { src: './img/23.jpg', width: 640, height: 789 },
+      { src: './img/24.jpg', width: 700, height: 990 },
+      { src: './img/25.jpg', width: 1242, height: 2688 },
+      { src: './img/26.jpg', width: 675, height: 900 },
+      { src: './img/27.jpg', width: 700, height: 1244 },
+      { src: './img/28.jpg', width: 600, height: 1700 },
+      { src: './img/29.jpg', width: 658, height: 802 },
+      { src: './img/30.jpg', width: 566, height: 800 },
+    ]
+
+    var colHeightList = []  // 每列的高度
+    var colLeftList = []
+
+    /**
+     * 创建元素并排列
+     * @param imgInfoList
+     */
+    function fallImages (imgInfoList) {
+      var fragment = document.createDocumentFragment()
+      var minColHeight, minIndex, boxHeight
+      for (var i = 0; i < imgInfoList.length; i++) {
+        // 创建img-box
+        var oImgBox = document.createElement('div')
+        oImgBox.className = 'img-box'
+        var oImg = document.createElement('img')
+        oImg.src = imgInfoList[i].src
+        oImgBox.appendChild(oImg)
+
+        boxHeight = parseFloat((imgInfoList[i].height * (imageWidth / imgInfoList[i].width) + boxBorder * 2 + boxPadding * 2).toFixed(2))
+        // 获取最短列高及对应的下标
+        minColHeight = Math.min.apply(Math, colHeightList)
+        minIndex = colHeightList.indexOf(minColHeight)
+        oImgBox.style.top = (minColHeight + boxMarginBottom) + 'px'
+        oImgBox.style.left = colLeftList[minIndex]
+        oImgBox.style.height = boxHeight + 'px'
+
+        fragment.appendChild(oImgBox)
+
+        oImgBox.height = imgInfoList[i].height
+        oImgBox.width = imgInfoList[i].width
+
+        // 更新列高
+        colHeightList[minIndex] += (boxMarginBottom + boxHeight)
+      }
+
+      container.appendChild(fragment)
+
+      container.style.height = Math.max.apply(Math, colHeightList) + 'px'
+    }
+
+    /**
+     * 模拟后台返回数据
+     * @returns {Array}
+     */
+    function moreFakeImgInfo () {
+      var createCount = 20
+      var moreImgInfoList = []
+      var imgLength = imgInfoList.length
+      // 从原数据随机获取组成新数组
+      for (var i = 0; i < createCount; i++) {
+        moreImgInfoList.push(imgInfoList[parseInt(Math.random() * (imgLength - 1))])
+      }
+      return moreImgInfoList
+    }
+
+    /**
+     * 行宽改变重新排列
+     */
+    window.onresize = function () {
+      oldCols = cols
+      cols = parseInt((document.documentElement.clientWidth * 0.9 + boxMarginRight) / boxWidth)
+      container.style.width = (boxWidth * cols + boxMarginRight * (cols - 1)) + 'px'
+      // 最大可容纳列数改变
+      if (oldCols !== cols) {
+        var imageBoxList = container.getElementsByClassName('img-box')
+        colHeightList = []
+        colLeftList = []
+        var minColHeight, minIndex
+        for (var i = 0; i < imageBoxList.length; i++) {
+          if (i < cols) {  // 初始化第一行
+
+            imageBoxList[i].style.top = 0
+            imageBoxList[i].style.left = (i === 0 ? 0 : (boxWidth + boxMarginRight) * i) + 'px'
+
+            colHeightList.push(parseFloat((imageBoxList[i].height * (imageWidth / imageBoxList[i].width) + boxBorder * 2 + boxPadding * 2).toFixed(2)))
+            colLeftList.push(i === 0 ? '0px' : (boxWidth + boxMarginRight) * i + 'px')
+
+          }
+          else {  // 对后面的元素重新排列
+            minColHeight = Math.min.apply(Math, colHeightList)
+            minIndex = colHeightList.indexOf(minColHeight)
+            imageBoxList[i].style.top = (minColHeight + boxMarginBottom) + 'px'
+            imageBoxList[i].style.left = colLeftList[minIndex]
+
+            colHeightList[minIndex] += parseFloat(parseFloat((boxMarginBottom + imageBoxList[i].height * (imageWidth / imageBoxList[i].width) + boxBorder * 2 + boxPadding * 2).toFixed(2)))
+          }
+        }
+        container.style.height = Math.max.apply(Math, colHeightList) + 'px'
+      }
+    }
+
+    window.onload = function () {
+      cols = parseInt((document.documentElement.clientWidth * 0.9 + boxMarginRight) / boxWidth)
+      container.style.width = (boxWidth * cols + boxMarginRight * (cols - 1)) + 'px'
+
+      var boxHeight
+      var fragment = document.createDocumentFragment()  // 创建文档碎片
+      for (var i = 0; i < imgInfoList.length; i++) {
+        if (i < cols) {  // 只加载第一行
+
+          var oImgBox = document.createElement('div')
+          oImgBox.className = 'img-box'
+          var oImg = document.createElement('img')
+          oImg.src = imgInfoList[i].src
+          oImgBox.appendChild(oImg)
+
+          boxHeight = parseFloat((imgInfoList[i].height * (imageWidth / imgInfoList[i].width) + boxBorder * 2 + boxPadding * 2).toFixed(2))
+          oImgBox.style.top = 0
+          oImgBox.style.left = (i === 0 ? 0 : (boxWidth + boxMarginRight) * i) + 'px'
+          oImgBox.style.height = boxHeight + 'px'
+          fragment.appendChild(oImgBox)
+
+          oImgBox.height = imgInfoList[i].height
+          oImgBox.width = imgInfoList[i].width
+
+          colHeightList.push(boxHeight)
+          colLeftList.push(i === 0 ? '0px' : (boxWidth + boxMarginRight) * i + 'px')
+        }
+        else {
+          break
+        }
+      }
+      container.appendChild(fragment)
+      fallImages(imgInfoList.slice(cols))  // 排列余下的元素
+    }
+
+    var end = 0
+    var time = 0 // TODO
+    /**
+     * 下拉展示“新数据”
+     */
+    window.onscroll = function () {
+      if (end) {  // 已展示完
+        return
+      }
+      var scrolledHeight = document.documentElement.scrollTop || document.body.scrollTop
+      if (scrolledHeight + document.documentElement.clientHeight > Math.min.apply(null, colHeightList)) {
+        console.log('create more')
+        // TODO 这里需要从后台获取数据
+        var newImgInfoList = moreFakeImgInfo()
+        fallImages(newImgInfoList)
+        if (time++ > 3) {
+          end = 1
+        }
+      }
+    }
+
+  }())
+
+</script>
+</html>

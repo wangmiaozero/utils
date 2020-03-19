@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>ascii art</title>
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas, video {
+            display: block;
+            margin: auto;
+        }
+
+    </style>
+</head>
+<body>
+<video id="video" controls>
+    <source src="./mov_bbb.mp4" type="video/mp4">
+    您的浏览器不支持 HTML5 video 标签。
+</video>
+<canvas id="ascii-canvas"></canvas>
+<script>
+  (function () {
+    // canvas 实现
+    var video = document.getElementById('video')
+
+    var offScreenCvs = document.createElement('canvas')
+    var offScreenCtx = offScreenCvs.getContext('2d', { alpha: false })
+    var asciiCvs = document.getElementById('ascii-canvas')
+    var asciiCtx = asciiCvs.getContext('2d', { alpha: false })
+    var offScreenCvsWidth, offScreenCvsHeight, asciiCvsWidth, asciiCvsHeight
+    var fontSize = 8
+    var samplerStep = 2
+
+    var maxWidth = 400, maxHeight = 400
+
+    video.onloadeddata = function () {
+      offScreenCvsWidth = video.videoWidth
+      offScreenCvsHeight = video.videoHeight
+      var ratio = offScreenCvsWidth / offScreenCvsHeight
+      if (video.videoWidth > maxWidth) {
+        offScreenCvsWidth = maxWidth
+        offScreenCvsHeight = Math.floor(offScreenCvsWidth / ratio)
+      }
+      if (video.videoHeight > maxHeight) {
+        offScreenCvsHeight = maxHeight
+        offScreenCvsWidth = Math.floor(offScreenCvsHeight * ratio)
+      }
+      offScreenCvs.width = offScreenCvsWidth
+      offScreenCvs.height = offScreenCvsHeight
+      asciiCvsWidth = (offScreenCvsWidth / samplerStep + 1) * fontSize
+      asciiCvsHeight = (offScreenCvsHeight / samplerStep + 1) * fontSize
+      asciiCvs.width = asciiCvsWidth
+      asciiCvs.height = asciiCvsHeight
+
+      offScreenCtx.drawImage(video, 0, 0, offScreenCvsWidth, offScreenCvsHeight)
+      imageData = offScreenCtx.getImageData(0, 0, offScreenCvsWidth, offScreenCvsHeight)
+      render()
+
+      // video.onclick = function () {
+      //   video.paused ? video.play() : video.pause()
+      // }
+
+      video.onplay = function () {
+        stop = false
+        rendering = false
+        requestAnimationFrame(tick)
+      }
+
+      video.onpause = function () {
+        stop = true
+      }
+    }
+
+    var imageData
+    var x, y, _x, _y, pos
+    var r, g, b
+    var asciiCharArray = '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,"^`\'. '.split('')
+    var durationPerChar = Math.ceil(255 / asciiCharArray.length)
+
+    function render () {
+      var imageDataContent = imageData.data
+      var part1, part2
+      var letter
+      var value
+      asciiCtx.fillStyle = '#ffffff'
+      asciiCtx.fillRect(0, 0, asciiCvsWidth, asciiCvsHeight)
+      asciiCtx.fillStyle = '#000000'
+      asciiCtx.font = fontSize + 'px SimHei'
+      for (y = 0, _y = 0; y < offScreenCvsHeight; y += samplerStep, _y++) {
+        for (x = 0, _x = 0; x < offScreenCvsWidth; x += samplerStep, _x++) {
+          pos = y * offScreenCvsWidth + x
+          r = imageDataContent[pos * 4]
+          g = imageDataContent[pos * 4 + 1]
+          b = imageDataContent[pos * 4 + 2]
+          value = r * 0.3086 + g * 0.6094 + b * 0.0820
+          imageDataContent[pos * 4] = imageDataContent[pos * 4 + 1] = imageDataContent[pos * 4 + 2] = value
+
+          part1 = Math.floor(value / durationPerChar)
+          part2 = value % durationPerChar
+          letter = part2 ? asciiCharArray[part1] : (part1 ? asciiCharArray[part1 - 1] : 'æ')
+
+          asciiCtx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')'
+          asciiCtx.fillText(letter, _x * fontSize, (_y + 1) * fontSize)
+        }
+      }
+    }
+
+    var stop = false
+    var timeNow = Date.now()
+    var timeLast = timeNow
+    var delta = 0
+    var interval
+    var fps = 60
+
+    interval = 1000 / fps
+
+    var rendering = false
+    var tick = function () {
+      if (stop) return false
+      timeNow = Date.now()
+      delta = timeNow - timeLast
+      if (delta > interval) {
+        timeLast = timeNow
+
+        if (!rendering) {
+          rendering = true
+          offScreenCtx.drawImage(video, 0, 0, offScreenCvsWidth, offScreenCvsHeight)
+          imageData = offScreenCtx.getImageData(0, 0, offScreenCvsWidth, offScreenCvsHeight)
+          render()
+          rendering = false
+        }
+      }
+      requestAnimationFrame(tick)
+    }
+  })()
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D图片</title>
+    <script src="./gl-matrix-min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background-color: #000;
+        }
+        canvas {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate3d(-50%, -50%, 0);
+        }
+    </style>
+</head>
+<body>
+
+<script>
+
+  init()
+
+  async function init () {
+
+    const PAGE_WIDTH = document.body.clientWidth
+    const PAGE_HEIGHT = document.body.clientHeight
+    const CANVAS_WIDTH = 900
+    const CANVAS_HEIGHT = 900
+    const canvas = document.createElement('canvas')
+    canvas.width = CANVAS_WIDTH
+    canvas.height = CANVAS_HEIGHT
+    document.body.appendChild(canvas)
+
+    const { mat4, mat3, vec3 } = glMatrix
+
+    const gl = canvas.getContext('webgl')
+
+    gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
+
+    // 加载图片（原图和深度图尺寸一致）
+    const image = new Image()
+    image.src = './sennpai.jpg'
+    const depthImage = new Image()
+    depthImage.src = './sennpai_depth.jpg'
+    await new Promise(resolve => image.complete ? resolve() : (image.onload = e => resolve()))
+    await new Promise(resolve => depthImage.complete ? resolve() : (depthImage.onload = e => resolve()))
+
+    let ratio = 1
+    if (image.height > CANVAS_HEIGHT) {
+      ratio = CANVAS_HEIGHT / image.height
+    }
+    if (image.width * ratio > CANVAS_WIDTH) {
+      ratio = CANVAS_WIDTH / image.width
+    }
+
+    const imgWidth = image.width * ratio
+    const imgHeight = image.height * ratio
+
+    // 获取源码
+    let res = await fetch('./shader_vertex.vert', { method: 'get', })
+    let shaderSrc = await res.text()
+    // 创建顶点着色器
+    const vs = gl.createShader(gl.VERTEX_SHADER)
+    gl.shaderSource(vs, shaderSrc)
+    gl.compileShader(vs)
+    // 获取着色器信息
+    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+      // 打印编译失败日志
+      console.error(`Error compile shader:\n${shaderSrc}\n=====error log======\n${gl.getShaderInfoLog(vs)}`)
+      gl.deleteShader(vs)
+      return null
+    }
+
+    // 获取源码
+    res = await fetch('./shader_fragment.frag', { method: 'get', })
+    shaderSrc = await res.text()
+    // 创建片元着色器
+    const fs = gl.createShader(gl.FRAGMENT_SHADER)
+    gl.shaderSource(fs, shaderSrc)
+    gl.compileShader(fs)
+    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+      console.error(`Error compile shader:\n${shaderSrc}\n=====error log======\n${gl.getShaderInfoLog(fs)}`)
+      gl.deleteShader(fs)
+      return null
+    }
+
+    // 创建program
+    const prg = gl.createProgram()
+    gl.attachShader(prg, vs)
+    gl.attachShader(prg, fs)
+    gl.linkProgram(prg)
+    gl.useProgram(prg)
+
+    // 设置投影矩阵
+    const projMat4 = mat4.create()
+    /**
+     * ortho(out, left, right, bottom, top, near, far)
+     */
+    mat4.ortho(projMat4, -CANVAS_WIDTH / 2, CANVAS_WIDTH / 2, -CANVAS_HEIGHT / 2, CANVAS_HEIGHT / 2, 0, 500)
+    // 获取投影矩阵的地址
+    const uProj = gl.getUniformLocation(prg, 'u_proj')
+    // 将投影矩阵传入
+    gl.uniformMatrix4fv(uProj, false, projMat4)
+
+    // 使用顶点数组创建vbo
+    const vertexList = new Float32Array([
+      //    x              y        u  v
+      -imgWidth / 2, imgHeight / 2, 0, 0,
+      -imgWidth / 2, -imgHeight / 2, 0, 1,
+      imgWidth / 2, imgHeight / 2, 1, 0,
+      imgWidth / 2, -imgHeight / 2, 1, 1,
+    ])
+    // 获取数组每个元素的大小（用于计算步长）
+    const PER_ELEMENT_SIZE = vertexList.BYTES_PER_ELEMENT
+    const buffer = gl.createBuffer()
+    /**
+     * 绑定缓冲区
+     * @param target 数据类型
+     * @param buffer 缓冲区对象
+     */
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+    /**
+     * 向缓冲区写入数据
+     * @param target 数据类型
+     * @param data 数据（这里是类型化数组）
+     * @param usage 绘制方式（用于帮助webgl优化）
+     */
+    gl.bufferData(gl.ARRAY_BUFFER, vertexList, gl.STATIC_DRAW)
+    // 获取顶点坐标变量在着色器中的地址
+    const aPos = gl.getAttribLocation(prg, 'a_pos')
+    /**
+     * 将缓冲区对象分配给attribute变量
+     * @param location：变量的存储地址
+     * @param size：每个顶点分量个数，若个数比变量的数量少，则按照gl.vertexAttrib[1234]f的规则来补全
+     * @param type：指定数据类型
+     * @param normalized：是否需要归一化
+     * @param stride：相邻两个顶点之间的字节数（只有一种数据则为0）
+     * @param offset：数据的偏移量（单位字节,只有一种数据则为0）
+     */
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, PER_ELEMENT_SIZE * 4, 0)
+    // 允许aPos访问VBO
+    gl.enableVertexAttribArray(aPos)
+    // 获取纹理坐标变量在着色器中的地址
+    const aUV = gl.getAttribLocation(prg, 'a_uv')
+    gl.vertexAttribPointer(aUV, 2, gl.FLOAT, false, PER_ELEMENT_SIZE * 4, PER_ELEMENT_SIZE * 2)
+    // 允许aUV访问VBO
+    gl.enableVertexAttribArray(aUV)
+
+    // 使用完后解绑VBO
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+
+    // 创建纹理对象
+    const texture = gl.createTexture()
+    // 激活0号纹理单元
+    gl.activeTexture(gl.TEXTURE0)
+    // 绑定并开启0号纹理单元
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    // 指定缩小算法
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    // 指定放大算法
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    // 指定水平方向填充算法
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    // 指定垂直方向填充算法
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    /**
+     * 通过0号纹理单元将图片分配给纹理对象
+     * target 指定为2D纹理
+     * level 金字塔纹理
+     * internalFormat 图片内部格式
+     * format 纹理格式（必须与internalFormat相同）
+     * type 纹理数据类型
+     * image 图片
+     */
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+    // 获取纹理对象在着色器中的地址（使用uniform，因为每个顶点操作的都是同一个纹理）
+    const uSampler = gl.getUniformLocation(prg, 'u_sampler')
+    // 指定从0号纹理单元获取纹理
+    gl.uniform1i(uSampler, 0)
+
+    // 同理，创建深度贴图的纹理
+    const depthTexture = gl.createTexture()
+    // 绑定并开启1号纹理单元
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, depthTexture)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, depthImage)
+    const uSamplerDepth = gl.getUniformLocation(prg, 'u_sampler_depth')
+    // 指定从1号纹理单元获取纹理
+    gl.uniform1i(uSamplerDepth, 1)
+
+    const uOffset = gl.getUniformLocation(prg, 'u_offset')
+    const scale = 0.1
+    document.body.onmousemove = e => {
+      gl.uniform2f(uOffset, scale * (e.pageX / PAGE_WIDTH - 0.5), scale * (e.pageY / PAGE_HEIGHT - 0.5))
+      loop()
+    }
+
+    // 绘制循环
+    function loop () {
+      gl.clearColor(0.0, 0.0, 0.0, 1.0)
+      gl.clear(gl.COLOR_BUFFER_BIT) // 清空颜色缓冲区
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+      // requestAnimationFrame(loop)
+    }
+
+  }
+</script>
+</body>
+</html>

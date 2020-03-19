@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>ascii art</title>
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas, video, #container {
+            display: block;
+            margin: auto;
+        }
+
+        #container {
+            line-height: 12px;
+            font-size: 12px;
+            font-family: 'SimHei', monospace;
+            letter-spacing: 6px;
+            margin-top: 10px;
+        }
+
+        video {
+            outline: 0;
+            max-height: 300px;
+        }
+
+    </style>
+</head>
+<body>
+<video id="video" controls>
+    <source src="./Bad Apple!!.mp4" type="video/mp4">
+    您的浏览器不支持 HTML5 video 标签。
+</video>
+<div id="container"></div>
+<script>
+  (function () {
+    var container = document.getElementById('container')
+    var offScreenCvs = document.createElement('canvas')
+    var offScreenCtx = offScreenCvs.getContext('2d', { alpha: false })
+    var offScreenCvsWidth, offScreenCvsHeight
+    var samplerStep = 4
+    var fontSize = 8
+
+    var imageData
+    var x, y, pos
+    var asciiCharArray = '#KDGLftji+;,:. '.split('')
+    var durationPerChar = 255 / asciiCharArray.length
+
+    var maxWidth = 400, maxHeight = 400
+
+    var video = document.getElementById('video')
+    video.crossOrigin = 'anonymous'
+    video.onloadeddata = function () {
+      offScreenCvsWidth = video.videoWidth
+      offScreenCvsHeight = video.videoHeight
+      var ratio = offScreenCvsWidth / offScreenCvsHeight
+      if (video.videoWidth > maxWidth) {
+        offScreenCvsWidth = maxWidth
+        offScreenCvsHeight = Math.floor(offScreenCvsWidth / ratio)
+      }
+      if (video.videoHeight > maxHeight) {
+        offScreenCvsHeight = maxHeight
+        offScreenCvsWidth = Math.floor(offScreenCvsHeight * ratio)
+      }
+      offScreenCvs.width = offScreenCvsWidth
+      offScreenCvs.height = offScreenCvsHeight
+
+      offScreenCtx.drawImage(video, 0, 0, offScreenCvsWidth, offScreenCvsHeight)
+      imageData = offScreenCtx.getImageData(0, 0, offScreenCvsWidth, offScreenCvsHeight)
+
+      if (fontSize < 12) {
+        container.style.transform = 'scale(' + (fontSize / 12) + ')'
+        container.style.transformOrigin = '50% 0'
+        fontSize = 12
+      }
+      container.style.width = (offScreenCvsWidth * fontSize / samplerStep) + 'px'
+      container.style.height = (offScreenCvsHeight / samplerStep * fontSize) + 'px'
+      container.style.fontSize = fontSize + 'px'
+      container.style.lineHeight = fontSize + 'px'
+      container.style.letterSpacing = (fontSize / 2) + 'px'
+
+      render()
+
+      // video.onclick = function () {
+      //   video.paused ? video.play() : video.pause()
+      // }
+
+      video.onplay = function () {
+        stop = false
+        rendering = false
+        requestAnimationFrame(tick)
+      }
+
+      video.onpause = function () {
+        stop = true
+      }
+    }
+
+    var stop = false
+    var timeNow = Date.now()
+    var timeLast = timeNow
+    var delta = 0
+    var interval
+    var fps = 60
+
+    interval = 1000 / fps
+
+    var rendering = false
+    var tick = function () {
+      if (stop) return false
+      timeNow = Date.now()
+      delta = timeNow - timeLast
+      if (delta > interval) {
+        timeLast = timeNow
+
+        if (!rendering) {
+          rendering = true
+          offScreenCtx.drawImage(video, 0, 0, offScreenCvsWidth, offScreenCvsHeight)
+          imageData = offScreenCtx.getImageData(0, 0, offScreenCvsWidth, offScreenCvsHeight)
+          render()
+          rendering = false
+        }
+      }
+      requestAnimationFrame(tick)
+    }
+
+    function render () {
+      var imageDataContent = imageData.data
+      var strArray = []
+      var part1, part2
+      var letter
+      var value
+      for (y = 0; y < offScreenCvsHeight; y += samplerStep) {
+        strArray.push('<p>')
+        for (x = 0; x < offScreenCvsWidth; x += samplerStep) {
+          pos = y * offScreenCvsWidth + x
+          value = imageDataContent[pos * 4] * 0.3086 + imageDataContent[pos * 4 + 1] * 0.6094 + imageDataContent[pos * 4 + 2] * 0.0820
+          imageDataContent[pos * 4] = imageDataContent[pos * 4 + 1] = imageDataContent[pos * 4 + 2] = value
+
+          part1 = Math.floor(value / durationPerChar)
+          part2 = parseFloat((value % durationPerChar).toFixed(5))
+          letter = part2 ? asciiCharArray[part1] : (part1 ? asciiCharArray[part1 - 1] : 'æ')
+
+          strArray.push(letter === ' ' ? '&nbsp;' : letter)
+        }
+        strArray.push('</p>')
+
+      }
+      container.innerHTML = strArray.join('')
+    }
+  })()
+</script>
+</body>
+</html>

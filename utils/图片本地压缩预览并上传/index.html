@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+</head>
+
+<body>
+<input type="file" name="file" accept="image/png, image/jpeg, image/jpg" id="file">
+<img src="" alt="" id="preview">
+<button type="button" id="upload">上传</button>
+<script>
+  /**
+   * Base64编/解码
+   * @type {{characters: string, encode: Base64.encode, decode: Base64.decode}}
+   */
+  let Base64 = {
+    characters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
+    /**
+     * 对字符串编码
+     * @param {string} string
+     * @returns {string}
+     */
+    encode: function (string) {
+      let characters = Base64.characters
+      let result = ''
+
+      let i = 0
+      do {
+        let a = string.charCodeAt(i++)
+        let b = string.charCodeAt(i++)
+        let c = string.charCodeAt(i++)
+
+        a = a || 0
+        b = b || 0
+        c = c || 0
+
+        let b1 = (a >> 2) & 0x3F
+        let b2 = ((a & 0x3) << 4) | ((b >> 4) & 0xF)
+        let b3 = ((b & 0xF) << 2) | ((c >> 6) & 0x3)
+        let b4 = c & 0x3F
+
+        if (!b) {
+          b3 = b4 = 64
+        }
+        else if (!c) {
+          b4 = 64
+        }
+
+        result += characters.charAt(b1) + characters.charAt(b2) + characters.charAt(b3) + characters.charAt(b4)
+
+      } while (i < string.length)
+
+      return result
+    },
+
+    /**
+     * 对base64字符串解码
+     * @param {string} string
+     * @returns {string}
+     */
+    decode: function (string) {
+      let characters = Base64.characters
+      let result = ''
+
+      let i = 0
+      do {
+        let b1 = characters.indexOf(string.charAt(i++))
+        let b2 = characters.indexOf(string.charAt(i++))
+        let b3 = characters.indexOf(string.charAt(i++))
+        let b4 = characters.indexOf(string.charAt(i++))
+
+        let a = ((b1 & 0x3F) << 2) | ((b2 >> 4) & 0x3)
+        let b = ((b2 & 0xF) << 4) | ((b3 >> 2) & 0xF)
+        let c = ((b3 & 0x3) << 6) | (b4 & 0x3F)
+
+        result += String.fromCharCode(a) + (b ? String.fromCharCode(b) : '') + (c ? String.fromCharCode(c) : '')
+
+      } while (i < string.length)
+
+      return result
+    }
+  }
+  window.btoa = Base64.encode
+  window.atob = Base64.decode
+
+  if (!HTMLCanvasElement.prototype.toBlob) {
+    Object.defineProperty(HTMLCanvasElement.prototype, 'toBlob', {
+      value: function (callback, type, quality) {
+        const binStr = atob(this.toDataURL(type, quality).split(',')[1])
+        const len = binStr.length
+        const arr = new Uint8Array(len)
+
+        for (let i = 0; i < len; i++) {
+          arr[i] = binStr.charCodeAt(i)
+        }
+
+        callback(new Blob([arr], { type: type || 'image/png' }))
+      }
+    })
+  }
+
+  const fileEle = document.getElementById('file')
+  const uploadEle = document.getElementById('upload')
+  const previewEle = document.getElementById('preview')
+
+  let imgFile = null
+
+  let _ctx, _mimeType, _width, _height, _quality, _targetSize, _onSuccess
+
+  function compress (target, quality_size, maxWidth, maxHeight, onSuccess) {
+    if (typeof target === 'object') {  // 首次执行
+      const file = target
+      const fileSize = file.size / 1000
+      _targetSize = quality_size
+      _mimeType = file.type
+      _onSuccess = onSuccess
+      const srcImg = new Image()
+      const srcImgData = URL.createObjectURL(file)
+      if (fileSize < _targetSize) {
+        _onSuccess({ dataUrl: srcImgData, blob: file })
+        return false
+      }
+      srcImg.src = srcImgData
+      srcImg.onload = function () {
+        _width = srcImg.naturalWidth
+        _height = srcImg.naturalHeight
+        if (_width > maxWidth) {
+          _height = maxWidth / _width * _height
+          _width = maxWidth
+        }
+        if (_height > maxHeight) {
+          _width = maxHeight / _height * _width
+          _height = maxHeight
+        }
+        const ratio = _width / _height
+        _cvs = document.createElement('canvas')
+        _cvs.width = _width
+        _cvs.height = _height
+        _ctx = _cvs.getContext('2d')
+        _ctx.drawImage(srcImg, 0, 0, _width, _height)
+        var imgData = _cvs.toDataURL(_mimeType, 1)
+        const imgSize = Math.round(imgData.replace('data:' + _mimeType + ';base64,', '').length * 3 / 4) / 1000
+        imgSize > _targetSize ? compress(imgData, _targetSize / imgSize) : _cvs.toBlob(blob => { _onSuccess({ dataUrl: imgData, blob: blob }) }, _mimeType, 1)
+      }
+    }
+    else if (typeof target === 'string') {
+      const imgData = target
+      const newImg = new Image()
+      const quality = quality_size > 0.9 ? 0.9 : quality_size
+      newImg.src = imgData
+      newImg.onload = function () {
+        _ctx.clearRect(0, 0, _width, _height)
+        _ctx.drawImage(newImg, 0, 0)
+        var newImgData = _cvs.toDataURL(_mimeType, quality)
+        const newImgSize = Math.round(newImgData.replace('data:' + _mimeType + ';base64,', '').length * 3 / 4) / 1000
+        newImgSize > _targetSize ? compress(newImgData, _targetSize / newImgSize) : _cvs.toBlob(blob => { _onSuccess({ dataUrl: newImgData, blob: blob }) }, _mimeType, quality)
+      }
+    }
+  }
+
+  fileEle.onchange = function (e) {
+    if (fileEle.files.length > 0) {
+      const file = e.target.files[0]
+      compress(file, 500, 1000, 1000, function (data) {
+        previewEle.src = data.dataUrl
+        imgFile = data.blob
+      })
+    }
+  }
+  uploadEle.onclick = function (e) {
+    if (fileEle.files.length > 0) {
+      const formData = new FormData()
+      imgFile && formData.append('avatar', imgFile, 'avatar.' + _mimeType.split('/')[1])
+      formData.append('user', '666666')
+      $.ajax({
+        type: 'post',
+        url: '/upload',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (res) {
+          console.log(res)
+        },
+        dataType: 'json'
+      })
+    }
+  }
+</script>
+</body>
+
+</html>

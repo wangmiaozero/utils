@@ -1,0 +1,561 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>贪吃蛇小游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            position: relative;
+            background: lightgrey;
+        }
+
+        canvas {
+            display: block;
+            border: 1px dashed grey;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 30px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 20px;
+            text-align: center;
+        }
+
+        h3 {
+            height: 30px;
+            line-height: 30px;
+            font-size: 16px;
+            text-align: center;
+            color: #d90000;
+        }
+
+        h1 sub {
+            font-size: 20px;
+            color: #333;
+            vertical-align: bottom;
+        }
+
+        form {
+            margin: 10px auto 0;
+            width: 700px;
+            font-size: 0;
+        }
+        form .row {
+            margin-top: 10px;
+            height: 44px;
+        }
+        form .column {
+            display: inline-block;
+            vertical-align: top;
+            width: 350px;
+        }
+        form label {
+            font-size: 15px;
+            display: inline-block;
+            vertical-align: top;
+            width: 160px;
+            line-height: 44px;
+            text-align: right;
+        }
+        form input {
+            width: 160px;
+            height: 30px;
+            padding: 5px;
+            vertical-align: top;
+        }
+        form .button-group {
+            text-align: center;
+        }
+        form button {
+            width: 100px;
+            height: 30px;
+            font-size: 15px;
+        }
+        #apply {
+            margin-right: 30px;
+        }
+    </style>
+</head>
+<body>
+<h1>贪吃蛇<sub>(WASD移动)</sub></h1>
+<form>
+    <div class="row">
+        <div class="column"><label for="canvas-width">画布宽度（px）：</label><input type="number" id="canvas-width" placeholder="画布宽度（px）" value="600"></div>
+        <div class="column"><label for="canvas-height">画布高度（px）：</label><input type="number" id="canvas-height" placeholder="画布高度（px）" value="600"></div>
+    </div>
+    <div class="row">
+        <div class="column"><label for="length">起始长度（px）：</label><input type="number" id="length" placeholder="起始长度（px）" value="200"></div>
+        <div class="column"><label for="speed">起始速度（px/s）：</label><input type="number" id="speed" placeholder="起始速度（px/s）" value="100"></div>
+    </div>
+    <div class="row">
+        <div class="column"><label for="pos-y">起始位置-上（px）：</label><input type="number" id="pos-y" placeholder="起始位置-上（px）" value="400"></div>
+        <div class="column"><label for="pos-x">起始位置-左（px）：</label><input type="number" id="pos-x" placeholder="起始位置-左（px）" value="200"></div>
+    </div>
+    <div class="row">
+        <div class="column"><label for="fps">刷新率（fps）：</label><input type="number" id="fps" placeholder="刷新率（fps）" value="60"></div>
+    </div>
+    <div class="row button-group">
+        <button type="button" id="apply">应用</button>
+        <button type="button" id="start">开始</button>
+    </div>
+</form>
+<h2>score: <span id="score"></span></h2>
+<h3 id="tips"></h3>
+<script>
+
+  const $canvasWidth = document.getElementById('canvas-width')
+  const $canvasHeight = document.getElementById('canvas-height')
+  const $length = document.getElementById('length')
+  const $speed = document.getElementById('speed')
+  const $posX = document.getElementById('pos-x')
+  const $posY = document.getElementById('pos-y')
+  const $fps = document.getElementById('fps')
+  const $score = document.getElementById('score')
+  const $tips = document.getElementById('tips')
+
+  function checkCollision (box1, box2) {
+    return !(box1.right <= box2.left || box1.left >= box2.right || box1.top >= box2.bottom || box1.bottom <= box2.top)
+  }
+
+  const DIR = {
+    UP: 'up',
+    LEFT: 'left',
+    DOWN: 'down',
+    RIGHT: 'right',
+  }
+  const KEY_CODE = {
+    W: 87,
+    A: 65,
+    S: 83,
+    D: 68,
+  }
+
+  const Snake = function (_config) {
+    const config = {}
+    let canvas
+    let ctx
+    this.score = 0
+    this.msg = ''
+    this.crashed = false // 撞上自己
+    // config.headSize = { width: 20, height: 20 } // 头的宽/高
+    // config.partSize = { width: 20, height: 20 } // 每一节宽/高
+    let headPos
+    let bodyLength
+    let direction
+    let speed
+    let foodSize
+    // this.headRadian = 0
+    // this.displayHeadRadian = 0
+    let bodyParts // 身体组成部分的数组
+    let foodPos // 食物的位置
+    let eating
+    let headBox
+    let foodBox
+
+    this.init = function (_config) {
+      Object.assign(config, _config)
+      console.log(config)
+      canvas = document.getElementById('snake-canvas')
+      if (canvas) {
+        canvas.width = config.canvasWidth
+        canvas.height = config.canvasHeight
+      }
+      else {
+        canvas = document.createElement('canvas')
+        canvas.id = 'snake-canvas'
+        canvas.width = config.canvasWidth
+        canvas.height = config.canvasWidth
+        document.body.appendChild(canvas)
+      }
+      ctx = canvas.getContext('2d')
+
+      this.score = 0
+      this.crashed = false // 撞上自己
+      headPos = config.initHeadPos
+      bodyLength = config.initBodyLength
+      direction = config.initDirection
+      speed = config.initSpeed
+      foodSize = config.foodSize
+      bodyParts = [
+        { direction: DIR.RIGHT, x: headPos.x - bodyLength, y: headPos.y, width: bodyLength, height: config.partSize.height }
+      ]
+      // 食物的位置
+      foodPos = { x: 0, y: 0 }
+      eating = false
+      headBox = {
+        top: headPos.y,
+        right: headPos.x + config.headSize.width,
+        bottom: headPos.y + config.headSize.height,
+        left: headPos.x,
+      }
+      foodBox = {
+        top: foodPos.y,
+        right: foodPos.x + foodSize.width,
+        bottom: foodPos.y + foodSize.height,
+        left: foodPos.x,
+      }
+      this.createFood()
+      this.update()
+      this.draw()
+    }
+
+    this.turn = function (keyCode) {
+      if ((direction === DIR.DOWN && keyCode === KEY_CODE.S) || (direction === DIR.DOWN && keyCode === KEY_CODE.W)
+        || (direction === DIR.RIGHT && keyCode === KEY_CODE.D) || (direction === DIR.RIGHT && keyCode === KEY_CODE.A)
+        || (direction === DIR.UP && keyCode === KEY_CODE.W) || (direction === DIR.UP && keyCode === KEY_CODE.S)
+        || (direction === DIR.LEFT && keyCode === KEY_CODE.A) || (direction === DIR.LEFT && keyCode === KEY_CODE.D)) {
+        return false
+      }
+      const bodyPart = { x: headPos.x, y: headPos.y, width: config.partSize.width, height: config.partSize.height }
+      switch (keyCode) {
+        case KEY_CODE.W: // 上 W
+          direction = DIR.UP
+          headPos.y -= 1
+          bodyPart.direction = DIR.UP
+          bodyPart.y = headPos.y + config.headSize.height
+          bodyPart.height = 1
+          break
+        case KEY_CODE.A: // 左 A
+          direction = DIR.LEFT
+          headPos.x -= 1
+          bodyPart.direction = DIR.LEFT
+          bodyPart.x = headPos.x + config.headSize.width
+          bodyPart.width = 1
+          break
+        case KEY_CODE.S: // 下 S
+          direction = DIR.DOWN
+          headPos.y += 1
+          bodyPart.direction = DIR.DOWN
+          bodyPart.y = headPos.y - 1
+          bodyPart.height = 1
+          break
+        case KEY_CODE.D: // 右 D
+          direction = DIR.RIGHT
+          headPos.x += 1
+          bodyPart.direction = DIR.RIGHT
+          bodyPart.x = headPos.x - 1
+          bodyPart.width = 1
+          break
+      }
+      bodyParts.unshift(bodyPart)
+    }
+
+    this.move = function (delta) {
+      // 身体
+      const newBodyParts = []
+      let nextHeadPos = Object.assign({}, headPos)
+      const distance = delta / 1000 * speed
+      const nextHeadBox = {
+        top: nextHeadPos.y,
+        right: nextHeadPos.x + config.headSize.width,
+        bottom: nextHeadPos.y + config.headSize.height,
+        left: nextHeadPos.x,
+      }
+      switch (direction) {
+        case DIR.UP: // 上
+          nextHeadPos.y -= distance
+          nextHeadBox.top = nextHeadPos.y
+          nextHeadBox.bottom = nextHeadBox.top + 1
+          break
+        case DIR.LEFT: // 左
+          nextHeadPos.x -= distance
+          nextHeadBox.left = nextHeadPos.x
+          nextHeadBox.right = nextHeadBox.left + 1
+          break
+        case DIR.RIGHT: // 右
+          nextHeadPos.x += distance
+          nextHeadBox.left = nextHeadBox.right - 1
+          nextHeadBox.right = nextHeadBox.left + 1
+          break
+        case DIR.DOWN: // 下
+          nextHeadPos.y += distance
+          nextHeadBox.top = nextHeadBox.bottom - 1
+          nextHeadBox.bottom = nextHeadBox.top + 1
+          break
+      }
+      let addedLength = 0
+      if (bodyParts.length > 0) {
+        let curPart
+        let curPartBox
+        let delta = 0
+        // 临时长度（加上转角增加的部分）
+        const bodyPartLength = bodyLength
+        // const bodyPartLength = bodyLength + bodyParts.length * config.partSize.width
+        let end = false
+        for (let i = 0; !end && i < bodyParts.length; i++) {
+          curPart = bodyParts[i]
+          // 该部分方向向右
+          if (curPart.direction === DIR.RIGHT) {
+            if (i === 0) { curPart.width += distance }
+            delta = addedLength + curPart.width - bodyPartLength
+            // 若超过了总长度则截取
+            if (delta >= 0) {
+              curPart.x += delta
+              curPart.width -= delta
+              newBodyParts.push(curPart)
+              end = true
+            }
+            else {
+              addedLength += curPart.width
+              newBodyParts.push(curPart)
+            }
+          }
+          // 该部分方向向下
+          else if (curPart.direction === DIR.DOWN) {
+            if (i === 0) {
+              curPart.height += distance
+            }
+            delta = addedLength + curPart.height - bodyPartLength
+            // 若超过了总长度则截取
+            if (delta >= 0) {
+              curPart.y += delta
+              curPart.height -= delta
+              newBodyParts.push(curPart)
+              end = true
+            }
+            else {
+              addedLength += curPart.height
+              newBodyParts.push(curPart)
+            }
+          }
+          // 该部分方向向左
+          else if (curPart.direction === DIR.LEFT) {
+            if (i === 0) {
+              curPart.x -= distance
+              curPart.width += distance
+            }
+            delta = addedLength + curPart.width - bodyPartLength
+            // 若超过了总长度则截取
+            if (delta >= 0) {
+              curPart.width -= delta
+              newBodyParts.push(curPart)
+              end = true
+            }
+            else {
+              addedLength += curPart.width
+              newBodyParts.push(curPart)
+            }
+          }
+          // 该部分方向向上
+          else if (curPart.direction === DIR.UP) {
+            if (i === 0) {
+              curPart.y -= distance
+              curPart.height += distance
+            }
+            delta = addedLength + curPart.height - bodyPartLength
+            // 若超过了总长度则截取
+            if (delta >= 0) {
+              curPart.height -= delta
+              newBodyParts.push(curPart)
+              end = true
+            }
+            else {
+              addedLength += curPart.height
+              newBodyParts.push(curPart)
+            }
+          }
+          curPartBox = {
+            top: curPart.y,
+            right: curPart.x + curPart.width,
+            bottom: curPart.y + curPart.height,
+            left: curPart.x,
+          }
+          // if (i > 1) {
+          //   console.log(i, checkCollision(nextHeadBox, curPartBox), nextHeadBox, curPartBox)
+          // }
+          // 不可能和第一、二截尾巴撞上
+          if (i > 1 && !this.crashed && checkCollision(nextHeadBox, curPartBox)) {
+            this.msg = `和第${i + 1}截尾巴撞上了`
+            console.log('score:', this.score)
+            this.crashed = true
+          }
+        }
+      }
+      headPos = nextHeadPos
+      bodyParts = newBodyParts
+      headBox = nextHeadBox
+    }
+
+    // 和eat拆分开来是因为willEat必须每次循环调用，eat每帧调用，也许会穿过food
+    this.willEat = function () {
+      if (!eating && checkCollision(headBox, foodBox)) {
+        eating = true
+      }
+    }
+
+    this.eat = function () {
+      if (eating) {
+        bodyLength += foodSize.width
+        this.createFood()
+        speed *= 1.05
+        eating = false
+        this.score += 1
+      }
+    }
+
+    this.createFood = function () {
+      const newFoodPos = {
+        x: Math.random() * (config.canvasWidth - foodSize.width),
+        y: Math.random() * (config.canvasHeight - foodSize.height),
+      }
+      const newFoodBox = {
+        top: newFoodPos.y,
+        right: newFoodPos.x + foodSize.width,
+        bottom: newFoodPos.y + foodSize.height,
+        left: newFoodPos.x,
+      }
+      // 头部是否碰撞
+      if (checkCollision(headBox, newFoodBox)) {
+        this.createFood()
+      }
+      else {
+        // 循环遍历蛇身体，如果有碰撞则重新计算
+        // for (let i = 0; i < bodyParts.length; i++) {
+        //   ?? this.createFood()
+        // }
+        foodPos = newFoodPos
+        foodBox = newFoodBox
+      }
+    }
+
+    this.draw = function () {
+      ctx.clearRect(0, 0, config.canvasWidth, config.canvasHeight)
+      // 蛇头
+      ctx.fillStyle = 'rgba(0,10,10,0.5)'
+      ctx.fillRect(headPos.x, headPos.y, config.headSize.width, config.headSize.height)
+      // 蛇身
+      ctx.fillStyle = 'rgba(0,80,80,0.5)'
+      if (bodyParts.length > 0) {
+        for (let i = 0; i < bodyParts.length; i++) {
+          ctx.fillRect(bodyParts[i].x, bodyParts[i].y, bodyParts[i].width, bodyParts[i].height)
+        }
+      }
+
+      // 食物
+      ctx.fillStyle = 'rgba(0,2,127,1)'
+      ctx.fillRect(foodPos.x, foodPos.y, foodSize.width, foodSize.height)
+    }
+
+    this.update = function (delta) {
+      this.eat()
+      delta && this.move(delta)
+    }
+
+    this.init(_config)
+
+  }
+
+  const snake = new Snake(getConf())
+
+  function getConf () {
+    const opts = {
+      canvasWidth: 600,
+      canvasHeight: 600,
+      headSize: { width: 20, height: 20 }, // 头的宽/高
+      partSize: { width: 20, height: 20 }, // 每一节宽/高
+      initHeadPos: { x: 0, y: 0 }, // 头部的初始位置
+      initBodyLength: 200, // 初始身体长度
+      initDirection: DIR.RIGHT, // 初始方向
+      initSpeed: 100, // 初始速度
+      foodSize: { width: 20, height: 20 }, // 食物的尺寸
+    }
+    const canvasWidth = parseFloat($canvasWidth.value)
+    const canvasHeight = parseFloat($canvasHeight.value)
+    const length = parseFloat($length.value)
+    const speed = parseFloat($speed.value)
+    const posX = parseFloat($posX.value)
+    const posY = parseFloat($posY.value)
+    canvasWidth && (opts.canvasWidth = canvasWidth)
+    canvasHeight && (opts.canvasHeight = canvasHeight)
+    length && (opts.initBodyLength = length)
+    speed && (opts.initSpeed = speed)
+    posX && (opts.initHeadPos.x = posX)
+    posY && (opts.initHeadPos.y = posY)
+    return opts
+  }
+
+  let fps = 60  // 每秒帧数
+  let lockFps = true // 锁定帧率
+  let interval = 1000 / fps  // 连续帧之间间隔（理论）
+  let stop = true  // 停止动画
+  let lastUpdateTime = performance.now()  // 上一次更新的时间
+  let lastDrawTime = lastUpdateTime  // 上一次渲染的时间
+  let delta = 0  // 连续帧之间间隔（实际）
+
+  let distance = 0
+  const tick = function (timestamp) {
+    if (stop) return false
+    snake.willEat()
+    delta = timestamp - lastUpdateTime
+    snake.update(delta)
+    if (lockFps) {
+      if (timestamp - lastDrawTime > interval) {
+        snake.draw()
+        $score.innerHTML = snake.score
+        lastDrawTime = timestamp
+      }
+    }
+    else {
+      snake.draw()
+    }
+    lastUpdateTime = timestamp
+
+    if (snake.crashed) {
+      snake.draw()
+      $tips.innerHTML = snake.msg
+    }
+    else {
+      requestAnimationFrame(tick)
+    }
+  }
+
+  const pause = function () {
+    stop = true
+  }
+
+  const play = function () {
+    stop = false
+    lastUpdateTime = performance.now()
+    requestAnimationFrame(tick)
+  }
+
+  const reset = function () {
+    fps = parseFloat($fps.value) || 60
+    interval = 1000 / fps
+    pause()
+    snake.init(getConf())
+  }
+
+  document.getElementById('apply').onclick = reset
+
+  document.getElementById('start').onclick = function () {
+    reset()
+    play()
+  }
+
+  window.addEventListener('keydown', function (e) {
+    const keyCode = e.keyCode
+    if (keyCode === 32) {
+      return stop ? play() : pause()
+    }
+    [KEY_CODE.W, KEY_CODE.A, KEY_CODE.S, KEY_CODE.D].indexOf(keyCode) !== -1 && snake.turn(keyCode)
+  })
+
+</script>
+
+</body>
+</html>

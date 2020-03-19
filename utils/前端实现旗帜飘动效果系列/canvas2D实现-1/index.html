@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>旗帜飘飘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            position: relative;
+            background: lightgrey;
+        }
+
+        #flagCanvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center;
+            transform: translate3d(-50%, -50%, 0);
+        }
+    </style>
+</head>
+<body>
+<canvas id="flagCanvas"></canvas>
+<script>
+  var canvas = document.getElementById('flagCanvas')
+  var ctx = canvas.getContext('2d')
+
+  var IMG_MAX_WIDTH = 600
+  var IMG_MAX_HEIGHT = 600
+  var imgWidth, imgHeight
+
+  var image = new Image()
+  image.src = './flag.jpg'
+
+  var amplitude = 30  // 振幅
+  var period = 2  // 周期数
+  var frequency = 1  // 频率
+  var wavelength // 波长
+  var v // 波速
+  var cftX // x系数
+  var cftA // 振幅系数
+
+  image.onload = function (ev) {
+
+    imgWidth = Math.floor(image.width)
+    imgHeight = Math.floor(image.height)
+
+    var canvas = document.getElementById('flagCanvas')
+    var scale = 1
+    if (imgWidth > IMG_MAX_WIDTH) {
+      scale = IMG_MAX_WIDTH / imgWidth
+    }
+    if (imgHeight > IMG_MAX_HEIGHT) {
+      scale = scale * IMG_MAX_HEIGHT / imgHeight
+    }
+
+    canvasWidth = imgWidth
+    canvasHeight = imgHeight + amplitude * 2
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
+    canvas.style.transform = 'translate3d(-50%,-50%,0) scale(' + scale + ')'
+
+    wavelength = imgWidth / period
+    cftX = 2 * Math.PI / wavelength
+    cftA = amplitude / imgWidth
+    v = wavelength * frequency
+
+    tick()
+  }
+
+  var fps = 70  // 每秒帧数
+  var interval = 1000 / fps  // 连续帧之间间隔（理论）
+  var stop = false  // 停止动画
+  var timeNow = Date.now()  // 当前时间
+  var timeLast = timeNow  // 上一帧时间
+  var delta = 0  // 连续帧之间间隔（实际）
+
+  var distance = 0
+  var tick = function () {
+    if (stop) return false
+    timeNow = Date.now()
+    delta = timeNow - timeLast
+    if (delta > interval) {
+      timeLast = timeNow
+      distance += (delta / 1000 * v)
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+      for (var x = 0; x < imgWidth; x++) {
+        var y = cftA * x * Math.sin(cftX * (x - distance)) + amplitude
+        ctx.drawImage(image, x, 0, 1, imgHeight, x, y, 1, imgHeight)
+      }
+    }
+    requestAnimationFrame(tick)
+  }
+
+</script>
+</body>
+</html>
