@@ -2,9 +2,9 @@
 const API_URL = "https://zhanzhile.ukidgo.cn";
 //const API_URL = "https://zhanzhiledev.ukidgo.cn";
 
-
+var token = wx.getStorageSync('token') ? wx.getStorageSync('token') : [];
 function Get(url, params) {
-    var token = wx.getStorageSync('token') ? wx.getStorageSync('token') : [];
+   
     let promise = new Promise(function(resolve, reject) {
 
         wx.request({
@@ -41,7 +41,6 @@ function Get(url, params) {
 }
 
 function Post(url, params) {
-    var token = wx.getStorageSync('token') ? wx.getStorageSync('token') : [];
     let promise = new Promise(function(resolve, reject) {
 
         wx.request({
@@ -78,7 +77,6 @@ function Post(url, params) {
 }
 
 function JsonPost(url, params) {
-    var token = wx.getStorageSync('token') ? wx.getStorageSync('token') : [];
     let promise = new Promise(function(resolve, reject, token) {
 
         wx.request({
