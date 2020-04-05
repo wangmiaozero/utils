@@ -1,0 +1,79 @@
+<!--
+ * @Description: 
+ * @Version: 1.0
+ * @Autor: wangmiao
+ * @Date: 2020-04-05 16:16:12
+ * @LastEditors: wangmiao
+ * @LastEditTime: 2020-04-05 16:16:22
+ -->
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Document</title>
+ </head>
+ <body>
+   <script> 
+ /**
+ *假设数组[100,400,200,300],
+ *它的意思是,总数是100+400+200+300=1000. 
+ *取到第一个数的概率是100/1000,
+ *取到第二个数的概率是400/1000.....
+ *这样 筛选到最终，总会有一个数满足要求
+ *就相当于去一个箱子里摸东西
+ *第一个不是，第二个不是，第三个还不是，那最后一个一定是。
+ *这个算法简单，而且效率非常高
+ *关键是这个算法已在我们以前的项目中有应用，尤其是大数据量的项目中效率非常棒。
+  */
+ function getResult(arr){
+      var leng = 0;
+      for(var i=0; i<arr.length; i++){
+          leng+=arr[i] //获取总数
+      }
+      for(var i=0; i<arr.length; i++){
+          var random = parseInt(Math.random()*leng);//获取 0-总数 之间的一个随随机整数
+          if(random<arr[i]){
+              return i  //如果在当前的概率范围内,得到的就是当前概率
+          }
+          else {
+              leng-=arr[i]  //否则减去当前的概率范围,进入下一轮循环
+          }
+      }
+ }
+ var gifts = [
+      {
+          "name":"UR",
+          "prop":0.01
+      },
+      {
+          "name":"SSR",
+          "prop":0.03
+      },
+      {
+          "name":"SR",
+          "prop":1
+      },
+      {
+          "name":"R",
+          "prop":5
+      },
+      {
+          "name":"N",
+          "prop":90
+      }
+ ];
+   
+ var gArr = [];
+ for(var i=0; i<gifts.length; i++){
+     gArr.push(gifts[i]['prop'])
+ }
+ // console.log(gifts[getResult(gArr)]['name'])
+ for (let index = 0; index < 10; index++) {
+   console.log(gifts[getResult(gArr)])   
+ }  
+  
+ 
+   </script>
+ </body>
+ </html>
