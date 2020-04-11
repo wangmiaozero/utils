@@ -17,7 +17,7 @@ class Canvas {
         this.canvas.onclick = () => {
             this.drawAgain();
         }
-    }
+    }  
 
     getColor(arr) { // 随机获取颜色
         let a, b, color = [];
