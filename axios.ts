@@ -1,15 +1,7 @@
-/*
- * @Description: 
- * @Version: 1.0
- * @Autor: wangmiao
- * @Date: 2020-04-15 09:43:04
- * @LastEditors: wangmiao
- * @LastEditTime: 2020-04-15 09:43:41
- */
 // http.ts
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
-// number
-const showStatus = (status) => {
+
+const showStatus = (status: number) => {
   let message = ''
   switch (status) {
     case 400:
@@ -81,8 +73,8 @@ const service = axios.create({
   }]
 })
 
-// 请求拦截器 AxiosRequestConfig
-service.interceptors.request.use((config) => {
+// 请求拦截器
+service.interceptors.request.use((config: AxiosRequestConfig) => {
     return config
 }, (error) => {
     // 错误抛到业务代码
@@ -91,8 +83,8 @@ service.interceptors.request.use((config) => {
     return Promise.resolve(error)
 })
 
-// 响应拦截器 AxiosResponse
-service.interceptors.response.use((response) => {
+// 响应拦截器
+service.interceptors.response.use((response: AxiosResponse) => {
     const status = response.status
     let msg = ''
     if (status < 200 || status >= 300) {
