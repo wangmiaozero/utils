@@ -1,0 +1,60 @@
+<!--
+ * @Description: 
+ * @Version: 1.0
+ * @Autor: wangmiao
+ * @Date: 2020-05-14 19:41:59
+ * @LastEditors: wangmiao
+ * @LastEditTime: 2020-05-14 19:42:01
+--> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+    <title>autoScroll</title>
+	<style>
+		.parent {
+			width: 300px;
+			height: 200px;
+			margin: 0 auto;
+			background: #242424;
+			overflow-y: scroll;
+		}
+		/*设置的子盒子高度大于父盒子，产生溢出效果*/
+	    .child {
+			height: auto;
+		}
+		.child li {
+			height: 50px;
+			margin: 2px 0;
+			background: #009678;
+		}
+	</style>
+</head>
+<body>
+	<div id="parent" class="parent">
+		<ul id="child1" class="child">
+    		<li>1</li>
+    		<li>2</li>
+    		<li>3</li>
+    		<li>4</li>
+    		<li>5</li>
+		</ul>
+		<div id="child2" class="child"></div>
+	</div>
+</body>
+<script type="text/javascript">
+	roll:function () {
+    	var parent = document.getElementById('parent');
+    	var child1 = document.getElementById('child1');
+    	var child2 = document.getElementById('child2');
+    	child2.innerHTML = child1.innerHTML;
+    	setInterval(function () {
+       		if(parent.scrollTop >= child1.scrollHeight) {
+           		parent.scrollTop = 0;
+       		} else {
+           		parent.scrollTop++;
+            }
+    	}, 20);
+	}
+</script>
+</html>
