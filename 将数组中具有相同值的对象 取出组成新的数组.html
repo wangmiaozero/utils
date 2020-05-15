@@ -1,0 +1,113 @@
+<!--
+ * @Description: 
+ * @Version: 1.0
+ * @Autor: wangmiao
+ * @Date: 2020-05-15 19:58:11
+ * @LastEditors: wangmiao
+ * @LastEditTime: 2020-05-15 20:50:08
+--> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+</head>
+<body>
+<!-- <script>
+var college = [
+  [{firstName:'赵'}, {lastName:'赵大'}],
+  [{firstName:'赵'}, {lastName:'赵二'}],
+  [{firstName:'钱'},{lastName:'钱三'}],
+  [{firstName:'钱'},{lastName:'钱四'}],
+  [{firstName:'孙'},{lastName:'孙五'}],
+  [{firstName:'孙'},{lastName:'孙六'}],
+  [{firstName:'李'},{lastName:'李七'}],
+  [{firstName:'李'},{lastName:'李八'}],
+];
+
+//先用map结构记录
+function arrayToMap(data) {
+  //非数组或数据长度为0不处理
+  if(!data instanceof Array || data.length == 0) {
+    return {};
+  }
+  var map = {};
+  for(var i=0;i<data.length;i++) {
+    if(!data[i] instanceof Array || data.length < 2) {
+      continue;
+    }
+
+    let name = data[i][0].firstName;
+    if(name != undefined) {
+      if(map[name] == undefined) {
+        map[name] = [];
+      }
+      map[name].push(data[i]);
+    }
+  }
+  return map;
+}
+
+//把map转成数组
+function mapToArray(data) {
+  if(data == undefined) {
+    return [];
+  }
+  let array = [];
+  for(let p in data) {
+    array.push(data[p]);
+  }
+  return array;
+}
+
+//测试
+var map = arrayToMap(college);
+var array = mapToArray(map);
+console.log("第一组",map, "第二组",array)
+</script> -->
+<script>
+var arr=[{name:2,id:3},{name:2,id:4},{name:3,id:5},{name:3,id:6},{name:1,id:1},{name:1,id:2}];
+ 
+ // 传入一个数组
+ // 按照特定方式格式化
+ function sortArr(arr, str) {
+     var _arr = [],
+         _t = [],
+         // 临时的变量
+         _tmp;
+  
+     // 按照特定的参数将数组排序将具有相同值得排在一起
+     arr = arr.sort(function(a, b) {
+         var s = a[str],
+             t = b[str];
+  
+         return s < t ? -1 : 1;
+     });
+  
+     if ( arr.length ){
+         _tmp = arr[0][str];
+     }
+     // console.log( arr );
+     // 将相同类别的对象添加到统一个数组
+     for (var i in arr) {
+         console.log( _tmp);
+         if ( arr[i][str] === _tmp ){
+             console.log(_tmp)
+             _t.push( arr[i] );
+         } else {
+             _tmp = arr[i][str];
+             _arr.push( _t );
+             _t = [arr[i]];
+         }
+     }
+     // 将最后的内容推出新数组
+     _arr.push( _t );
+     return _arr;
+ }
+  
+ let reslut = sortArr( arr, 'name');
+ console.log(reslut)
+</script>
+</body>
+</html>
+
