@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .wrap {
+            width: 300px;
+            margin: 50px auto 0;
+        }
+
+        button {
+            font-size: 25px;
+        }
+
+        #btnNext {
+            float: right;
+        }
+
+        #mlist {
+            width: 300px;
+            background: #ccc;
+            border: 1px solid #666;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        #mlist li {
+            font-size: 24px;
+            color: blue;
+            line-height: 40px;
+            border-bottom: 1px solid #666;
+            padding-left: 5px;
+        }
+
+        #mlist li:last-child {
+            border-bottom: none;
+        }
+
+        #mlist li:hover {
+            color: red;
+        }
+
+        #mlist .play {
+            background: pink;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <audio src="李荣浩-老街.mp3" controls autoplay id="aud"></audio>
+        <button id="btnPre">上一首</button>
+        <button id="btnNext">下一首</button>
+        <ul id="mlist">
+            <li class="play">李荣浩-老街.mp3</li>
+            <li>熊梓淇-体面.mp3</li>
+            <li>云汐-女驸马.mp3</li>
+        </ul>
+    </div>
+
+    <script>
+        window.onload = function () {
+            var aud = document.getElementById('aud');
+            var btnPre = document.getElementById('btnPre'); //获取上一首按钮
+            var btnNext = document.getElementById('btnNext'); //  获取下一首按钮
+            var ul = document.getElementById('mlist');
+            var lis = ul.getElementsByTagName('li');
+
+            for (var i = 0; i < lis.length; i++) {
+                lis[i].ondblclick = function (e) {
+                    console.log(this.innerText)
+                    e.stopPropagation();
+                    console.log(this.innerText)
+                    aud.src = this.innerText;
+                    for (var j = 0; j < lis.length; j++) {
+                        lis[j].className = ''
+                    }
+                    this.className = 'play'
+                }
+            }
+
+
+            aud.onended = function () {
+                var index = getIndex();
+                if (index == lis.length - 1) {
+                    index = -1
+                }
+                aud.src = lis[index + 1].innerText;
+                for (var i = 0; i < lis.length; i++) {
+                    lis[i].className=''
+                }
+                lis[index+1].className='play'
+
+            }
+
+
+            btnNext.onclick=function(){  //切换下一首
+                var index=getIndex();
+                if(index==lis.length-1){
+                    index=-1;
+                }
+                aud.src=lis[index+1].innerText
+                for(var i=0;i<lis.length;i++){
+                    lis[i].className='';
+
+                }
+                lis[index+1].className='play'
+                
+            }
+
+            btnPre.onclick=function(){       //切换上一首
+                var index=getIndex();
+               
+                if(index==0){
+                    index=lis.length;
+                }
+                console.log(index)
+                aud.src=lis[index-1].innerText;
+                for(var i=0;i<lis.length;i++){
+                    lis[i].className=''
+                }
+                lis[index-1].className='play'
+            }
+
+
+
+
+
+            //获取索引  
+            function getIndex() {
+                for (i = 0; i < lis.length; i++) {
+                    if (lis[i].getAttribute('class') == 'play') {
+                        return i;
+                    }
+
+                }
+            }
+
+
+
+        }
+    </script>
+</body>
+
+</html>

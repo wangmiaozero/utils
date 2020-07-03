@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.wrap{
+    width: 300px;
+    margin: 50px auto 0;
+}
+button{
+	font-size: 25px;
+}
+#btnNext{
+	float: right;
+}
+#mlist{
+	width: 300px;
+	background: #ccc;
+	border: 1px solid #666;
+	border-radius: 10px;
+	overflow: hidden;
+	margin-top: 10px;
+}
+#mlist li{
+	font-size: 24px;
+	color: blue;
+	line-height: 40px;
+	border-bottom: 1px solid #666;
+	padding-left: 5px;
+}
+#mlist li:last-child{
+	border-bottom: none;
+}
+#mlist li:hover{
+	color: red;
+}
+#mlist .play{
+	background: pink;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <audio src="李荣浩-老街.mp3" controls autoplay id="aud"></audio>
+        <button id="btnPre">上一首</button>
+        <button id="btnNext">下一首</button>
+        <ul id="mlist">
+            <li class="play">李荣浩-老街.mp3</li>
+            <li>熊梓淇-体面.mp3</li>
+            <li>云汐-女驸马.mp3</li>
+        </ul>
+</div>
+<script>
+    //1 拿到页面上所有的元素 
+    var btnPre = document.getElementById('btnPre');
+    var btnNext = document.getElementById('btnNext');
+    var mlist = document.getElementById('mlist');
+    var aud = document.getElementById('aud');
+    var lis = mlist.getElementsByTagName('li');
+
+    //  双击的时候可以播放 li标签 
+    for(var i = 0; i < lis.length; ++i){
+        lis[i].ondblclick = function(e){//双击播放该音乐
+            e.preventDefault();
+            aud.src = this.innerHTML;
+            for(var j = 0 ; j < lis.length ; ++j){
+                lis[j].className = '';
+            }
+            this.className = 'play';
+        }
+    }
+	
+    aud.onended = function(){//当音乐播放完自动播放下一首
+        var index = getPlay();
+        // alert(index);
+        if(index == lis.length-1){//判断是否为最后一首，然后循环播放
+        index = -1;
+        }
+        aud.src = lis[index+1].innerHTML;//切换到下一首
+        for(var j = 0 ; j < lis.length ; ++j){
+            lis[j].className = '';
+        }
+        lis[index+1].className = 'play';
+    }
+    
+	btnNext.onclick = function(){//下一首
+        var index = getPlay();
+        if(index == lis.length-1){//判断是否为最后一首，然后循环播放
+            index = -1;
+        }
+        
+		aud.src = lis[index+1].innerHTML;//切换到下一首
+        for(var j = 0 ; j < lis.length ; ++j){
+            lis[j].className = '';
+        }
+        lis[index+1].className = 'play';
+    }
+    
+    btnPre.onclick = function(){//上一首
+        var index = getPlay();
+        if(index == 0){//判断是否为第一首，然后循环播放
+            index = lis.length;
+        }
+        aud.src = lis[index-1].innerHTML;//切换到上一首
+            for(var j = 0 ; j < lis.length ; ++j){
+                lis[j].className = '';
+            }
+        lis[index-1].className = 'play';
+    }
+        
+	function getPlay(){//获取当前正在播放的音乐的索引值
+        for(var i = 0 ; i < lis.length ; ++i){
+            if (lis[i].getAttribute('class') == 'play') {
+                return i;
+            }
+        }
+    }
+</script>
+</body>
+</html>
+

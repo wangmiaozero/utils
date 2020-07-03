@@ -1,0 +1,19 @@
+CACHE MANIFEST
+#上面一句代码必须是当前文档的第一句
+#后面写注释
+
+#需要缓存的文件清单列表
+CACHE:
+#下面就是需要缓存的清单列表
+../images/l1.jpg
+../images/l2.jpg
+# *:代表所有文件
+
+#配置每一次都需要重新从服务器获取的文件清单列表
+NETWORK:
+../images/l3.jpg
+
+#配置如果文件无法获取则使用指定的文件进行替代
+FALLBACK:
+../images/l4.jpg ../images/banner_1.jpg
+# /:代表所有文件

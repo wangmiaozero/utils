@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        a{
+            text-decoration: none;
+            color: #000;
+            border: 1px solid #eee;
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="username">
+    <input type="button" id="seach" value="杜索">
+    <ul>
+
+    </ul>
+    <script>
+        var arr=[];
+        document.querySelector('#seach').onclick=function(){
+            
+            var name=document.querySelector('#username').value;
+            
+            arr.push(name);
+            var str=JSON.stringify(arr);          //????????
+            // console.log(str);
+            localStorage.setItem('username',str);    //????????
+            window.location.href="goback.html";
+
+        }
+        window.onload=function(){
+            getData()
+        }
+        function getData(){
+            if(!arr){
+            return false; 
+        }
+        var local=localStorage.getItem('username');   //?????????
+            // console.log(local);   
+
+             arr=JSON.parse(local);       //   ????  array  ???????arr  
+            console.log(arr);
+            for(var i=0;i<arr.length;i++){
+                var li=document.createElement('li');
+                li.innerText=arr[i];
+                document.querySelector('ul').appendChild(li);
+            }
+       
+        }
+       
+    
+    
+    </script>
+</body>
+</html>
